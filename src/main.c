@@ -1,13 +1,19 @@
 #include <stdio.h>
-
+#include <time.h>
 #include "materialized.h"
 #include "table.h"
+#include "pipeline.h"
 
 #define CSV_PATH "data/funcionarios.csv"
 #define SALARY_FILTER 5000.0
 
-int main(void)
-{
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <model>\n", argv[0]);
+        return 1;
+    }
+
+
     Table employees;
     Table filtered;
     QueryMetrics metrics;
@@ -20,6 +26,12 @@ int main(void)
         fprintf(stderr, "error: could not load %s\n", CSV_PATH);
         table_free(&employees);
         return 1;
+    }
+
+    if (argc >= 3 && strcmp(argv[1], "--modelo") == 0 && strcmp(argv[2], "pipeline") == 0) {
+        execute_pipeline_query(&employees); // Passa a tabela correta
+        table_free(&employees);
+        return 0; // Encerra o programa aqui, ignorando o resto do código do Grupo A
     }
 
     scanned = scan_table(&employees);
