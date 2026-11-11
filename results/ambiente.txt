@@ -1,0 +1,18 @@
+data_execucao=2026-11-11 16:51 -0300
+cpu=Intel(R) Xeon(R) Processor
+cpus_logicas=8
+cache: L1d cache:                               384 KiB (8 instances)
+cache: L1i cache:                               256 KiB (8 instances)
+cache: L2 cache:                                16 MiB (8 instances)
+cache: L3 cache:                                320 MiB (1 instance)
+memoria_total=16386416 kB
+memoria_disponivel_no_inicio=13323520 kB
+so=Debian GNU/Linux 13 (trixie)
+kernel=6.12.113+
+virtualizacao=container-other
+compilador=gcc (Debian 14.2.0-19) 14.2.0
+flags=-std=c11 -Wall -Wextra -Wpedantic -Werror -O2 (Makefile, alvo miniquery_bench)
+python=3.13.5
+repeticoes_medidas=5 (mais 1 de aquecimento descartada, exceto Nested Loop com > 5e+09 comparações)
+semente_gerador=2026
+execucao=sequencial, 1 thread, uma configuração por processo

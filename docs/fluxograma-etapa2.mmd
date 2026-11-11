@@ -1,0 +1,22 @@
+flowchart TD
+    A([Início]) --> B["table_init(&src)<br/>table_load_csv(&src, data/funcionarios.csv)"]
+    B -->|falha| X1([erro: retorna 0])
+    B --> C["SCAN<br/>materialized_scan(&src, &scanned)<br/>copia TODAS as linhas → Table nova"]
+    C --> D["FILTER<br/>materialized_filter(&scanned, salary, COMPARE_GREATER, 5000.0, &filtered)"]
+    D --> D1{"para cada linha:<br/>salary > 5000?"}
+    D1 -->|sim| D2["table_append(&filtered, linha)<br/>(cópia da Row)"]
+    D1 -->|não| D3[descarta]
+    D2 --> D4{"mais linhas?"}
+    D3 --> D4
+    D4 -->|sim| D1
+    D4 -->|não| E["PROJECT<br/>materialized_project(&filtered, {id, salary}, &projected)<br/>novo Schema com 2 colunas + cópia dos valores"]
+    E --> F{"agregação?"}
+    F -->|"SELECT id, salary"| G[/"resultado = Table projected"/]
+    F -->|"COUNT/SUM/MIN/MAX/AVG"| H["AGGREGATE<br/>materialized_aggregate(&projected, AGG_*, salary, &result)<br/>percorre a tabela inteira, sem heap"]
+    H --> I[/"AggregateResult {value, count, has_value}"/]
+    G --> J["table_free na ordem inversa:<br/>projected → filtered → scanned → src"]
+    I --> J
+    J --> K([Fim: 0 bytes em uso — Valgrind])
+    C -.->|"falha de realloc: table_free(output), retorna 0"| X1
+    D -.->|falha| X1
+    E -.->|"coluna inexistente / falha"| X1

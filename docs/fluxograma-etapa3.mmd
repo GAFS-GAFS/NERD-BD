@@ -1,0 +1,23 @@
+flowchart TD
+    A([Início]) --> L1["table_load_csv(funcionarios)<br/>Table employees (base)"]
+    A --> L2["table_load_csv(departamentos)<br/>Table departments (base)"]
+    L1 --> S1["SCAN funcionarios<br/>materialized_scan → Table scan_f<br/>(cópia completa, capacidade exata)"]
+    L2 --> S2["SCAN departamentos<br/>materialized_scan → Table scan_d"]
+    S1 --> F["FILTER f.salary > limite<br/>materialized_filter → Table filtered"]
+    F --> FR["table_free(scan_f)"]
+    F --> J{"Algoritmo de JOIN<br/>f.department_id = d.id"}
+    S2 --> J
+    J -->|Nested Loop| N["para cada linha de filtered (externa):<br/>percorre todas as linhas de scan_d (interna)<br/>chave igual → table_append_values"]
+    J -->|Hash Join| B["BUILD: menor relação<br/>buckets + entries (um malloc cada)"]
+    B --> HT[("Tabela hash<br/>2n+1 buckets, n entradas")]
+    HT --> P["PROBE: cada linha da outra relação<br/>consulta o bucket e confere a chave"]
+    N --> JO["Table joined<br/>f.id, f.department_id, f.salary, f.age, d.id, d.name, d.region"]
+    P --> JO
+    P --> HF["libera a tabela hash"]
+    JO --> JR["table_free(filtered), table_free(scan_d)"]
+    JO --> PR["PROJECT d.name, f.salary<br/>materialized_project → Table projected"]
+    PR --> PF["table_free(joined)"]
+    PR --> G["GROUP BY d.name + AVG(f.salary)<br/>índice hash de grupos → Table grouped"]
+    G --> GF["table_free(projected)"]
+    G --> R[/"resultado: d.name, avg_salary"/]
+    R --> Z(["table_free(grouped), bases liberadas no fim<br/>Valgrind: 0 vazamentos"])

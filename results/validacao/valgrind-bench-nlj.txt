@@ -1,0 +1,16 @@
+==143251== Memcheck, a memory error detector
+==143251== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==143251== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==143251== Command: ./miniquery_bench valgrind 10k data/generated/funcionarios_10k_d1k.csv data/generated/departamentos_1k.csv nested_loop 5000 1 0
+==143251== 
+loaded 10000 funcionarios and 1000 departamentos in 108.0 ms
+valgrind,10k,materialized,nested_loop,1,10000,1000,5000.00,5862,0.586200,1000,5862,5862,997,4.416,0.293,6.680,0.000,367.130,367.130,5.560,12.073,396.152,401.062,5862000,0,0,1835008,1376000,1376000,1048576,1835008,375168,114688,29583,4749440,2979584,61624,7990480.9541
+==143251== 
+==143251== HEAP SUMMARY:
+==143251==     in use at exit: 0 bytes in 0 blocks
+==143251==   total heap usage: 72 allocs, 72 frees, 13,516,040 bytes allocated
+==143251== 
+==143251== All heap blocks were freed -- no leaks are possible
+==143251== 
+==143251== For lists of detected and suppressed errors, rerun with: -s
+==143251== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
