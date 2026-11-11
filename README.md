@@ -12,6 +12,8 @@ Autor: Rafael Lima Dias.
 |---|---|
 | [docs/etapa2.md](docs/etapa2.md) | Etapa 2: SCAN, FILTER, PROJECT e AGGREGATE; arquitetura, fluxograma, pipeline, memória e Valgrind, dificuldades e otimizações |
 | [docs/etapa3.md](docs/etapa3.md) | Etapa 3: duas tabelas, Nested Loop Join, Hash Join (BUILD/PROBE), GROUP BY, instrumentação, testes, experimentos, gráficos e resposta à questão da etapa |
+| [docs/relatorio-etapa2/](docs/relatorio-etapa2/) | Relatório da etapa 2 (LaTeX e PDF) |
+| [docs/relatorio-etapa3/](docs/relatorio-etapa3/) | Relatório da etapa 3 (LaTeX e PDF) |
 | [docs/materialization.md](docs/materialization.md) | Resumo do modelo materializado |
 | [results/tabelas.md](results/tabelas.md) | Tabelas comparativas dos experimentos (medianas) |
 | [results/](results/) | Medições brutas (`raw/`), medianas (`resumo_*.csv`), ambiente, datasets e logs de validação |
