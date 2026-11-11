@@ -1,119 +1,48 @@
-# miniquery-c
+# NERD-BD — Grupo A: Materialização
 
-`miniquery-c` is a didactic C project about database query execution models.
-The current version implements only Group A: materialization.
+Motor didático em C11 para as etapas 2 e 3 do NERD-BD. Cada operador consome a
+relação completa de entrada e materializa uma `Table` independente antes que o
+próximo operador comece.
 
-## Structure
+## Consulta demonstrada
 
 ```text
-miniquery-c/
-  src/
-  include/
-  data/
-  tests/
-  bench/
-  docs/
-  Makefile
-  README.md
+SCAN funcionarios -> FILTER -> JOIN <- SCAN departamentos -> GROUP BY -> PROJECT
 ```
 
-Main files:
+O executável executa a consulta equivalente a:
 
-- `include/table.h`: row, schema, column, and table definitions.
-- `include/materialized.h`: scan, materialized filter, aggregate, and metrics APIs.
-- `src/table.c`: schema helpers, table memory management, and CSV loading.
-- `src/scan.c`: full table scan operator.
-- `src/materialized.c`: materialized filter operator.
-- `src/aggregate.c`: `COUNT(*)` and `AVG(salary)` aggregation.
-- `tests/test_materialized.c`: simple unit tests for the current model.
-- `docs/materialization.md`: explanation of the materialized model.
+```sql
+SELECT d.nome, AVG(f.salario)
+FROM funcionarios f
+JOIN departamentos d ON f.departamento_id = d.id
+WHERE f.salario > 5000
+GROUP BY d.nome;
+```
 
-## Build
+Ela é executada com Nested Loop Join e Hash Join, que devem produzir os mesmos
+grupos.
+
+## Comandos
 
 ```sh
 make
-```
-
-The project uses C11 and only the C standard library.
-
-## Run
-
-```sh
 ./miniquery
-```
-
-The program reads `data/funcionarios.csv`, loads all rows into memory, scans the
-table, executes the fixed query `WHERE salary > 5000`, materializes approved
-rows into a new table, and prints:
-
-```text
-rows_in=...
-rows_out=...
-avg_salary=...
-time_ms=...
-```
-
-## Test
-
-```sh
 make test
-```
-
-## Clean
-
-```sh
+make bench          # grava bench/results.csv
+make sanitize       # requer bibliotecas de sanitizer
+make valgrind       # requer Valgrind no Linux/WSL
 make clean
 ```
 
-## Materialized Execution Model
+`make test` inclui a regressão da etapa 2, JOINs, GROUP BY e a consulta
+completa. O benchmark pequeno versionado é reproduzido por `make bench`.
 
-Materialization executes an operator and stores its full result before the next
-step consumes it.
+## Estrutura
 
-In this project:
-
-1. The CSV is loaded into an original `Table` with an associated `Schema`.
-2. A full scan exposes the rows from the original table.
-3. The fixed filter `salary > 5000` is applied.
-4. Approved rows are copied into a new intermediate `Table`.
-5. Aggregations run over the materialized table:
-   - `COUNT(*)`
-   - `AVG(salary)`
-
-This intentionally creates an intermediate table to make the materialized model
-easy to inspect and explain.
-
-## Fixed Query
-
-There is no SQL parser. The only supported query is hardcoded:
-
-```sql
-WHERE salary > 5000
-```
-
-The focus is the execution model, not query parsing.
-
-## Next Steps
-
-- Add larger CSV datasets for experiments.
-- Add benchmark cases in `bench/`.
-- Add more metrics, such as memory used by the materialized table.
-- Compare this model later with pipeline and vectorized execution models.
-# NERD-BD
-Repositório criado para a realização do projeto de extensão N.E.R.D UFPR.
-
-# Padrão de Código:
-- Linguagem principal : C
-- Código em inglês
-
-# Commits:
-- feat(scan): sequential scan implemented
-- feat(filter): predicate support added
-- fix(loader): csv parser corrected
-- bench(vector): baseline benchmark added
-
-# MakeFile:
-Como utilizar:
-- 1º - Compilar: No terminal, digite make para gerar o executável miniquery.
-- 2º - Testar: Utilize make test para rodar os testes automatizados básicos.
-- 3º - Limpar: Utilize make clean para remover os arquivos binários e objetos antes de novos commits.
+- `data/funcionarios.csv`: dataset da etapa 2.
+- `data/funcionarios_etapa3.csv` e `data/departamentos.csv`: datasets pequenos
+  para JOIN e testes da etapa 3.
+- `bench/generate_data.py`: gerador determinístico para cenários maiores.
+- `docs/etapa2.md`: arquitetura e memória da etapa 2.
+- `docs/etapa3.md`: JOINs, GROUP BY, métricas e reprodução da etapa 3.
