@@ -57,11 +57,11 @@ int materialized_filter(const Table *input, const char *column_name, Comparison 
     table_init_with_schema(output, input->schema);
     for (i = 0; i < input->size; ++i) {
         int matches;
-        if (!compare_values(&input->rows[i].values[column_index], comparison, &value, &matches)) {
+        if (!compare_values(table_cell(input, i, column_index), comparison, &value, &matches)) {
             table_free(output);
             return 0;
         }
-        if (matches && !table_append(output, &input->rows[i])) {
+        if (matches && !table_append_values(output, table_row_const(input, i))) {
             table_free(output);
             return 0;
         }
@@ -96,10 +96,11 @@ int materialized_project(const Table *input, const char *const *column_names,
                                input->schema.columns[indexes[j]].type)) return 0;
     }
     table_init_with_schema(output, schema);
+    if (input->size != 0 && !table_reserve_rows(output, input->size)) return 0;
     for (i = 0; i < input->size; ++i) {
         Row row;
         row_init(&row, &schema);
-        for (j = 0; j < column_count; ++j) row.values[j] = input->rows[i].values[indexes[j]];
+        for (j = 0; j < column_count; ++j) row.values[j] = *table_cell(input, i, indexes[j]);
         if (!table_append(output, &row)) {
             table_free(output);
             return 0;
@@ -128,11 +129,12 @@ int materialized_project_indices(const Table *input, const size_t *column_indexe
                                input->schema.columns[column_indexes[j]].type)) return 0;
     }
     table_init_with_schema(output, schema);
+    if (input->size != 0 && !table_reserve_rows(output, input->size)) return 0;
     for (i = 0; i < input->size; ++i) {
         Row row;
         row_init(&row, &schema);
         for (j = 0; j < column_count; ++j) {
-            row.values[j] = input->rows[i].values[column_indexes[j]];
+            row.values[j] = *table_cell(input, i, column_indexes[j]);
         }
         if (!table_append(output, &row)) {
             table_free(output);

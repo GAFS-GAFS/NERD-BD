@@ -31,7 +31,7 @@ int materialized_aggregate(const Table *input, AggregateFunction function,
         result->value = (double)input->size;
     } else {
         for (i = 0; i < input->size; ++i) {
-            double value = value_as_double(&input->rows[i].values[column_index]);
+            double value = value_as_double(table_cell(input, i, column_index));
             sum += value;
             if (i == 0 || (function == AGG_MIN && value < result->value) ||
                 (function == AGG_MAX && value > result->value)) result->value = value;

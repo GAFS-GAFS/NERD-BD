@@ -1,0 +1,45 @@
+==143220== Memcheck, a memory error detector
+==143220== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==143220== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==143220== Command: ./miniquery
+==143220== 
+SCAN f: 8 linhas | SCAN d: 5 linhas | FILTER salary > 5000.00: 5 linhas
+
+[NESTED_LOOP_JOIN]
+build_rows=5
+probe_rows=5
+hash_table_entries=0
+hash_table_bytes=0
+build_time_ms=0.000
+probe_time_ms=3.243
+total_time_ms=3.243
+rows_out=6
+memory_bytes=3584
+key_comparisons=25
+
+[HASH_JOIN]
+build_rows=5
+probe_rows=5
+hash_table_entries=5
+hash_table_bytes=168
+build_time_ms=1.955
+probe_time_ms=1.230
+total_time_ms=3.862
+rows_out=6
+memory_bytes=3752
+key_comparisons=6
+
+Query result (equivalent strategies):
+  finance: 7600.00
+  finance-remote: 7600.00
+  operations: 9100.00
+  engineering: 6500.00
+==143220== 
+==143220== HEAP SUMMARY:
+==143220==     in use at exit: 0 bytes in 0 blocks
+==143220==   total heap usage: 26 allocs, 26 frees, 38,168 bytes allocated
+==143220== 
+==143220== All heap blocks were freed -- no leaks are possible
+==143220== 
+==143220== For lists of detected and suppressed errors, rerun with: -s
+==143220== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

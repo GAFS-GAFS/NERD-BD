@@ -1,0 +1,10 @@
+make clean
+make[1]: Entering directory '/workspace/nerd-bd/code'
+rm -f miniquery test_materialized miniquery_bench bench/results.csv
+make[1]: Leaving directory '/workspace/nerd-bd/code'
+make CFLAGS="-std=c11 -Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer" test
+make[1]: Entering directory '/workspace/nerd-bd/code'
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -Iinclude src/table.c src/scan.c src/materialized.c src/aggregate.c src/join.c src/group_by.c tests/test_materialized.c -o test_materialized
+./test_materialized
+all materialized tests passed
+make[1]: Leaving directory '/workspace/nerd-bd/code'

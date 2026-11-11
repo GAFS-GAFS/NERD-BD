@@ -15,3 +15,7 @@ docs/video_demonstracao.md
 # Generated benchmark measurements
 bench/results.csv
 bench/generated_*.csv
+
+# Datasets grandes gerados por bench/run_experiments.py (reproduzíveis pela semente;
+# tamanhos e SHA-256 em results/datasets.csv)
+data/generated/

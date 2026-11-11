@@ -10,12 +10,14 @@
 
 static int table_reserve(Table *table, size_t capacity)
 {
-    Row *rows;
+    Value *values;
+    size_t width = table->schema.column_count;
 
-    if (capacity > (size_t)-1 / sizeof(*rows)) return 0;
-    rows = realloc(table->rows, capacity * sizeof(*rows));
-    if (rows == NULL) return 0;
-    table->rows = rows;
+    if (width == 0 || capacity == 0) return 0;
+    if (capacity > (size_t)-1 / width / sizeof(*values)) return 0;
+    values = realloc(table->values, capacity * width * sizeof(*values));
+    if (values == NULL) return 0;
+    table->values = values;
     table->capacity = capacity;
     return 1;
 }
@@ -119,6 +121,42 @@ double value_as_double(const Value *value)
     return value->type == DATA_TYPE_INT ? (double)value->as.int_value : value->as.double_value;
 }
 
+int value_equals(const Value *left, const Value *right)
+{
+    if (left->type == DATA_TYPE_STRING && right->type == DATA_TYPE_STRING) {
+        return strcmp(left->as.string_value, right->as.string_value) == 0;
+    }
+    return value_is_numeric(left) && value_is_numeric(right) &&
+           value_as_double(left) == value_as_double(right);
+}
+
+/* Final avalanche step so that close keys (1, 2, 3...) spread over the buckets. */
+static unsigned long hash_mix(unsigned long hash)
+{
+    hash ^= hash >> 16;
+    hash *= 0x45d9f3bUL;
+    hash ^= hash >> 16;
+    return hash;
+}
+
+/* djb2 over the double bytes (numbers) or the characters (strings), then mixed. */
+unsigned long value_hash(const Value *value)
+{
+    const unsigned char *text;
+    unsigned long hash = 5381UL;
+    if (value_is_numeric(value)) {
+        union { double number; unsigned char bytes[sizeof(double)]; } bits;
+        size_t i;
+        bits.number = value_as_double(value);
+        if (bits.number == 0.0) bits.number = 0.0; /* -0.0 and 0.0 compare equal */
+        for (i = 0; i < sizeof(bits.bytes); ++i) hash = ((hash << 5) + hash) ^ bits.bytes[i];
+        return hash_mix(hash);
+    }
+    text = (const unsigned char *)value->as.string_value;
+    while (*text != '\0') hash = ((hash << 5) + hash) ^ *text++;
+    return hash_mix(hash);
+}
+
 void row_init(Row *row, const Schema *schema)
 {
     size_t i;
@@ -159,7 +197,7 @@ void table_init(Table *table)
 void table_init_with_schema(Table *table, Schema schema)
 {
     table->schema = schema;
-    table->rows = NULL;
+    table->values = NULL;
     table->size = 0;
     table->capacity = 0;
 }
@@ -167,18 +205,51 @@ void table_init_with_schema(Table *table, Schema schema)
 void table_free(Table *table)
 {
     if (table == NULL) return;
-    free(table->rows);
-    table->rows = NULL;
+    free(table->values);
+    table->values = NULL;
     table->size = 0;
     table->capacity = 0;
     schema_init(&table->schema);
 }
 
+int table_reserve_rows(Table *table, size_t row_capacity)
+{
+    if (table == NULL) return 0;
+    if (row_capacity <= table->capacity) return 1;
+    return table_reserve(table, row_capacity);
+}
+
+int table_shrink_to_fit(Table *table)
+{
+    if (table == NULL) return 0;
+    if (table->size == 0 || table->size == table->capacity) return 1;
+    return table_reserve(table, table->size);
+}
+
+int table_append_values(Table *table, const Value *values)
+{
+    size_t width;
+    if (table == NULL || values == NULL || table->schema.column_count == 0) return 0;
+    if (table->size == table->capacity && !table_grow(table)) return 0;
+    width = table->schema.column_count;
+    memcpy(table->values + table->size * width, values, width * sizeof(*values));
+    table->size++;
+    return 1;
+}
+
 int table_append(Table *table, const Row *row)
 {
-    if (table == NULL || row == NULL) return 0;
-    if (table->size == table->capacity && !table_grow(table)) return 0;
-    table->rows[table->size++] = *row;
+    if (row == NULL) return 0;
+    return table_append_values(table, row->values);
+}
+
+int table_get_row(const Table *table, size_t row_index, Row *row)
+{
+    size_t width;
+    if (table == NULL || row == NULL || row_index >= table->size) return 0;
+    width = table->schema.column_count;
+    row_init(row, &table->schema);
+    memcpy(row->values, table->values + row_index * width, width * sizeof(*row->values));
     return 1;
 }
 
@@ -220,7 +291,8 @@ static int parse_csv_row(char *line, Row *row, const Schema *schema)
             if (!parse_int(token, &int_value) || !row_set_int(row, schema, i, int_value)) return 0;
         } else if (schema->columns[i].type == DATA_TYPE_DOUBLE) {
             if (!parse_double(token, &double_value) || !row_set_double(row, schema, i, double_value)) return 0;
-        } else if (!row_set_string(row, schema, i, token)) {
+        } else if (strlen(token) >= VALUE_STRING_MAX_LEN ||
+                   !row_set_string(row, schema, i, token)) {
             return 0;
         }
         token = strtok(NULL, ",");
@@ -251,10 +323,16 @@ int table_load_csv(Table *table, const char *path)
         }
     }
     fclose(file);
+    (void)table_shrink_to_fit(table); /* a failed shrink keeps the larger, valid buffer */
     return 1;
+}
+
+size_t table_row_bytes(const Table *table)
+{
+    return table == NULL ? 0 : table->schema.column_count * sizeof(*table->values);
 }
 
 size_t table_memory_bytes(const Table *table)
 {
-    return table == NULL ? 0 : table->capacity * sizeof(*table->rows);
+    return table == NULL ? 0 : table->capacity * table_row_bytes(table);
 }

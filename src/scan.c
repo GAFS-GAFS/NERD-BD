@@ -25,8 +25,9 @@ int materialized_scan(const Table *input, Table *output, QueryMetrics *metrics)
     size_t i;
     if (input == NULL || output == NULL || input == output) return 0;
     table_init_with_schema(output, input->schema);
+    if (input->size != 0 && !table_reserve_rows(output, input->size)) return 0;
     for (i = 0; i < input->size; ++i) {
-        if (!table_append(output, &input->rows[i])) {
+        if (!table_append_values(output, table_row_const(input, i))) {
             table_free(output);
             return 0;
         }

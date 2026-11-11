@@ -1,0 +1,4 @@
+rm -f miniquery test_materialized miniquery_bench bench/results.csv
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 -Iinclude src/table.c src/scan.c src/materialized.c src/aggregate.c src/join.c src/group_by.c tests/test_materialized.c -o test_materialized
+./test_materialized
+all materialized tests passed

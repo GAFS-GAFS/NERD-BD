@@ -28,9 +28,13 @@ valgrind: $(TEST_BIN)
 	valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 ./$(TEST_BIN)
 
 bench: $(BENCH_BIN)
-	./$(BENCH_BIN) data/funcionarios_etapa3.csv data/departamentos.csv > bench/results.csv
+	./$(BENCH_BIN) smoke versioned data/funcionarios_etapa3.csv data/departamentos.csv hash 5000 5 1 header > bench/results.csv
+	./$(BENCH_BIN) smoke versioned data/funcionarios_etapa3.csv data/departamentos.csv nested_loop 5000 5 1 >> bench/results.csv
+
+experiments: $(BENCH_BIN)
+	python3 bench/run_experiments.py
 
 clean:
 	rm -f $(BIN) $(TEST_BIN) $(BENCH_BIN) bench/results.csv
 
-.PHONY: all clean test sanitize valgrind bench
+.PHONY: all clean test sanitize valgrind bench experiments

@@ -2,6 +2,7 @@
 #define MINIQUERY_MATERIALIZED_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 #include "table.h"
 
@@ -37,18 +38,26 @@ typedef struct {
 } AggregateResult;
 
 typedef struct {
-    size_t build_rows;
-    size_t probe_rows;
+    size_t build_rows;          /* Hash Join: BUILD input; Nested Loop: inner relation */
+    size_t probe_rows;          /* Hash Join: PROBE input; Nested Loop: outer relation */
     size_t rows_out;
-    size_t memory_bytes;
+    size_t memory_bytes;        /* auxiliary structures + output buffer */
+    size_t output_bytes;        /* reserved bytes of the materialized output */
     size_t hash_table_entries;
     size_t hash_table_bytes;
+    size_t hash_buckets;
+    size_t key_comparisons;     /* key equality tests executed */
+    int build_is_left;          /* 1 when the left input was used as BUILD/inner */
     double build_time_ms;
     double probe_time_ms;
     double total_time_ms;
 } JoinMetrics;
 
-/* Every function below creates an independent materialized output table. */
+/*
+ * Every operator below creates an independent materialized output table.
+ * The output must arrive empty (initialized or freed); the caller owns it and
+ * releases it with table_free after its last consumer finishes.
+ */
 int materialized_scan(const Table *input, Table *output, QueryMetrics *metrics);
 int materialized_filter(const Table *input, const char *column_name,
                         Comparison comparison, Value value, Table *output,
@@ -72,6 +81,8 @@ int materialized_hash_join(const Table *left, const char *left_key,
                            const char *left_alias, const Table *right,
                            const char *right_key, const char *right_alias,
                            Table *output, JoinMetrics *metrics);
+/* Prints the metrics in the "[NAME]\nkey=value" layout of the stage 3 statement. */
+void join_metrics_print(FILE *stream, const char *name, const JoinMetrics *metrics);
 int materialized_group_by(const Table *input, const char *const *group_columns,
                           size_t group_column_count, AggregateFunction function,
                           const char *aggregate_column, const char *result_name,
